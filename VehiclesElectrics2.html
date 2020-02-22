@@ -1,0 +1,218 @@
+<!-- Contenido por Thais Fontenelle - Template Html por W3 -->
+
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Mapbox - Vehicles Electrics - Thais Fontenelle</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.6.1/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.2/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.2/mapbox-gl-geocoder.css" type="text/css"/>
+    <!-- Promise polyfill script required to use Mapbox GL Geocoder in IE 11 -->
+	<script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: relative;
+            top: 150;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
+		.geocoder {
+			position: absolute;
+			z-index: 1;
+			width: 50%;
+			left: 10%;
+			margin-left: 0;
+			top: 80px;
+		}
+		.janela {
+			position: absolute;
+			z-index: 1;
+			width: 35%;
+			left: 60%;
+			margin-left: 0;
+			top: 80px;
+		}
+		.mapboxgl-ctrl-geocoder {
+			
+		}
+    </style>
+    <script>
+        function init() {
+            mapboxgl.accessToken =
+                'pk.eyJ1IjoidGhhaXNmcyIsImEiOiJjazVtbmwxM2oweWZ5M2psYmM5OXJvcXoxIn0.hPkZ62LrWH86ILED_5eAyw';
+            var map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/thaisfs/ck6v5uzp709au1iqkn6bo2lsy',
+                center: [2.162356, 41.386834],
+                zoom: 11,
+                attributionControl: false
+            });
+            
+            // Navegacion
+            map.addControl(new mapboxgl.AttributionControl({compact: true}));
+            map.addControl(new mapboxgl.NavigationControl());
+            
+            //Barra de escala
+            var scale = new mapboxgl.ScaleControl({
+                maxWidth: 280,
+                unit: 'metric'
+            });
+            map.addControl(scale);
+            
+          
+            
+            
+            // *************** CARGAR CAPA ***********************
+            
+            
+            map.on('load', function () {
+                map.addSource("vehiclesElectrics_source", {
+                    type: "vector",
+                    url: "mapbox://thaisfs.ck6v5zgox095m2lmhdi2ocowk-27j5x" //poner mapbox://vuestro id
+                }); //fin map source
+       
+                var camada = {
+                        'id': 'vehiclesElectrics',
+                        'type': "circle",
+                        'source': "vehiclesElectrics_source", 
+                        'source-layer': "Tileset_VehiclesElectrics", //poner vuestro titulo capa
+                        'paint':{
+                       		'circle-color': "#efefef",
+                       		'circle-opacity': 0
+                        }
+                };
+                
+                map.addLayer(camada);               
+            });
+
+            
+            
+            //Inicio Popup cuando seleccionamos punto
+
+            map.on('click','vehiclesElectrics',function(e){
+
+                    var text = "<b>DATOS DE LA ESTACIÓN</b><br>";
+                    //console.info(e);
+                        text += "<b>Codigo de la estación</b>:"+e.features[0].properties["CODI_IDENTIFICACIO_ESTACIO"]+"<br>";
+                        text += "<b>Numero de conectores</b>:"+e.features[0].properties["NUM_DE_CONNECTORS_AL_EQUIP"]+"<br>";
+                        text += "<b>Dirección</b>:"+e.features[0].properties["DIRECCIO"]+"<br>";
+                        text += "<b>Tarifa</b>:"+e.features[0].properties["TARIFA "]+"<br>";
+                        text += "<b>Control de accesso:</b>:"+e.features[0].properties["CONTROL_DE_ACCES"]+"<br>";
+                        text += "<b>Restricciones de uso</b>:"+e.features[0].properties["RESTRICCIO_DE_US"]+"<br>";
+                        
+                    new mapboxgl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(text)
+                        .addTo(map);
+
+             });
+				
+             map.on('mouseenter', 'vehiclesElectrics', function() {
+                 map.getCanvas().style.cursor = 'pointer';                    
+             });
+
+             map.on('mouseleave', 'vehiclesElectrics', function() {
+                map.getCanvas().style.cursor = '';                    
+             });
+             // Fin Popup cuando seleccionamos punto 
+             
+             
+             // *********** GEOCODER *****************
+             
+             
+             var geocoder = new MapboxGeocoder({
+				accessToken: mapboxgl.accessToken,
+				mapboxgl: mapboxgl
+			});
+            
+            
+				 
+			document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+             
+			
+			var latitudeGeo;
+			var longitudeGeo;
+			function localizarEstacao() {
+				latitudeGeo = geocoder.mapMarker._lngLat.lat;
+				longitudeGeo = geocoder.mapMarker._lngLat.lng;
+				document.getElementById('localizacao').innerHTML = 'Latitude: '+latitudeGeo+'<br>Longitude: '+longitudeGeo;
+				
+			}
+            
+			geocoder.on('result',localizarEstacao);
+			
+			
+			// ************ DIRECTIONS **************
+			
+			var directions = new MapboxDirections({
+			  accessToken: mapboxgl.accessToken,
+			  unit: 'metric',
+			  profile: 'mapbox/driving',
+			  controls: {
+				  inputs: false,
+				  instructions: false,
+				  profileSwitcher: false
+				  },
+			  interactive: false
+			  
+			});
+			
+			map.addControl(directions);
+			
+			document.getElementById('calcularItinerario').addEventListener('click', function() {
+				
+				directions.setOrigin([longitudeGeo,latitudeGeo]);
+				directions.setDestination([2.169394,41.388423]); // Coordenadas estacao 110 - Passeig de gracia
+				
+				
+			});
+			
+             
+		} // fin funccion init
+		
+		
+
+	 	
+
+    </script>
+</head>
+
+<body onload="init()">
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.js"></script>
+
+<!-- Navbar (sit on top) -->
+<div class="w3-top">
+  <div class="w3-bar w3-white w3-wide w3-padding w3-card">
+    <a href="index.html" class="w3-bar-item w3-button w3-hide-small"><b>[BCN]</b> Vehicles Electrics Barcelona</a>
+    <!-- Float links to the right. Hide them on small screens -->
+    <div class="w3-right w3-hide-small">
+      <a href="#" class="w3-bar-item w3-button">GitHub</a>
+      <a href="#" class="w3-bar-item w3-button">Medium</a>
+    </div>
+  </div>
+</div>
+
+<div id=conteudo style="margin-top:50px;width:100%;height:70%;">
+
+    <div id="map"></div>
+
+	<div id="geocoder" class="geocoder"><b>1) Escriba tu posición de origen: </b><br><div id=localizacao></div></div>
+	<div class=janela><b>2)Calcule el itinerario a la estación 110 - Passeig de Gracia</b> <br><button id=calcularItinerario>Calcular Itinerario</button></div>
+		
+
+</div>
+
+
+
+</body>
+</html>
